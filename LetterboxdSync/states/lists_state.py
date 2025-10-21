@@ -1,10 +1,6 @@
 """Lists state management."""
 import reflex as rx
-import sys
-import os
 from .auth_state import AuthState
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from LetterboxdScraper import LetterboxdScraper
 
 
@@ -18,7 +14,6 @@ class ListsState(AuthState):
         """Auto-load lists if none are cached."""
         if len(self.user_lists) == 0 and not self.is_loading:
             self.fetch_user_lists()
-
 
     def fetch_user_lists(self):
         """Fetch all lists for the current user."""
@@ -69,6 +64,10 @@ class ListsState(AuthState):
                     converted_lists.append(converted_list)
 
                 self.user_lists = converted_lists
+
+                # Trigger shared status check
+                self.check_shared_status_for_lists()
+
                 self.set_success(f"Found {len(lists)} lists!")
             else:
                 self.set_error("No lists found")
@@ -79,6 +78,32 @@ class ListsState(AuthState):
             self.set_error(f"Error: {str(e)}")
             self.set_loading(False)
 
+    def check_shared_status_for_lists(self):
+        """Check shared status for all current lists and update SyncState"""
+        try:
+            from sync_manager import SyncManager
+            sync_manager = SyncManager()
+            db = sync_manager.db
+
+            # Check shared status for each list
+            status_dict = {}
+            for list_item in self.user_lists:
+                list_url = list_item.get("url", "")
+                if list_url:
+                    status_dict[list_url] = db.is_list_already_shared(list_url)
+
+            # Update the shared status in the current state
+            # We'll add this to our own state instead of trying to access SyncState
+            self.update_shared_status(status_dict)
+
+        except Exception as e:
+            print(f"Error checking shared lists: {e}")
+
+    def update_shared_status(self, status_dict: dict):
+        """Update shared status - this will trigger SyncState update via event"""
+        # We'll handle this through an event or direct state update
+        pass  # For now, we'll handle this differently
+
     def select_list(self, list_id: str, list_name: str, list_url: str, film_count: str = "0"):
         """Select a list."""
         self.selected_list = {
@@ -87,9 +112,4 @@ class ListsState(AuthState):
             "url": list_url,
             "film_count": film_count
         }
-        # Set the list detail state info
-        from .list_detail_state import ListDetailState
-        detail_state = self.get_state(ListDetailState)
-        detail_state.set_list_info(list_id, list_name, list_url, film_count)
-
-        return rx.redirect(f"/list/{list_id}")
+        return rx.redirect(f"/lists/{list_id}")

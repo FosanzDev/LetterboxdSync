@@ -3,6 +3,7 @@ import json
 from bs4 import BeautifulSoup
 import urllib3
 import time
+import random
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -25,73 +26,108 @@ class LetterboxdScraper:
         self.verify_ssl = verify_ssl
 
     def login(self):
-        """Login to Letterboxd"""
+        """Login to Letterboxd with rate limiting"""
         print("[*] Fetching homepage to get CSRF token...")
 
         headers = {
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
 
-        try:
-            response = self.session.get(
-                "https://letterboxd.com/",
-                headers=headers,
-                verify=self.verify_ssl
-            )
-        except Exception as e:
-            print(f"[-] Failed to fetch homepage: {e}")
-            return False
+        max_retries = 3
+        base_delay = 5  # Start with 5 seconds
 
-        csrf_token = self.session.cookies.get("com.xk72.webparts.csrf")
-        if not csrf_token:
-            print("[-] Could not extract CSRF token")
-            return False
-
-        print(f"[+] CSRF token: {csrf_token}")
-
-        login_data = {
-            "__csrf": csrf_token,
-            "authenticationCode": "",
-            "username": self.username,
-            "password": self.password
-        }
-
-        login_headers = {
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
-            "Accept": "application/json, text/javascript, */*; q=0.01",
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "X-Requested-With": "XMLHttpRequest",
-            "Origin": "https://letterboxd.com",
-            "Referer": "https://letterboxd.com/",
-        }
-
-        print("[*] Sending login request...")
-        try:
-            login_response = self.session.post(
-                "https://letterboxd.com/user/login.do",
-                data=login_data,
-                headers=login_headers,
-                verify=self.verify_ssl
-            )
-        except Exception as e:
-            print(f"[-] Failed to login: {e}")
-            return False
-
-        if login_response.status_code == 200:
+        for attempt in range(max_retries):
             try:
-                response_json = login_response.json()
-                if response_json.get("result") == "success":
-                    print("[+] Login successful!")
-                    return True
-                else:
-                    print(f"[-] Login failed: {response_json.get('messages')}")
+                # Add random delay to avoid hitting rate limits
+                if attempt > 0:
+                    delay = base_delay * (2 ** attempt) + random.uniform(1, 3)
+                    print(f"[*] Rate limited, waiting {delay:.1f} seconds before retry {attempt + 1}/{max_retries}...")
+                    time.sleep(delay)
+
+                response = self.session.get(
+                    "https://letterboxd.com/",
+                    headers=headers,
+                    verify=self.verify_ssl
+                )
+
+                if response.status_code == 429:
+                    print(f"[-] Rate limited (429) on attempt {attempt + 1}")
+                    continue
+
+            except Exception as e:
+                print(f"[-] Failed to fetch homepage: {e}")
+                if attempt == max_retries - 1:
                     return False
-            except json.JSONDecodeError:
-                print("[-] Could not parse login response")
-                return False
-        else:
-            print(f"[-] Login failed with status {login_response.status_code}")
-            return False
+                continue
+
+            csrf_token = self.session.cookies.get("com.xk72.webparts.csrf")
+            if not csrf_token:
+                print("[-] Could not extract CSRF token")
+                if attempt == max_retries - 1:
+                    return False
+                continue
+
+            print(f"[+] CSRF token: {csrf_token}")
+
+            login_data = {
+                "__csrf": csrf_token,
+                "authenticationCode": "",
+                "username": self.username,
+                "password": self.password
+            }
+
+            login_headers = {
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "Accept": "application/json, text/javascript, */*; q=0.01",
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "X-Requested-With": "XMLHttpRequest",
+                "Origin": "https://letterboxd.com",
+                "Referer": "https://letterboxd.com/",
+            }
+
+            print("[*] Sending login request...")
+            try:
+                # Add small delay before login request
+                time.sleep(random.uniform(1, 2))
+
+                login_response = self.session.post(
+                    "https://letterboxd.com/user/login.do",
+                    data=login_data,
+                    headers=login_headers,
+                    verify=self.verify_ssl
+                )
+
+                if login_response.status_code == 429:
+                    print(f"[-] Login rate limited (429) on attempt {attempt + 1}")
+                    continue
+
+            except Exception as e:
+                print(f"[-] Failed to login: {e}")
+                if attempt == max_retries - 1:
+                    return False
+                continue
+
+            if login_response.status_code == 200:
+                try:
+                    response_json = login_response.json()
+                    if response_json.get("result") == "success":
+                        print("[+] Login successful!")
+                        return True
+                    else:
+                        print(f"[-] Login failed: {response_json.get('messages')}")
+                        if attempt == max_retries - 1:
+                            return False
+                except json.JSONDecodeError:
+                    print("[-] Could not parse login response")
+                    if attempt == max_retries - 1:
+                        return False
+            else:
+                print(f"[-] Login failed with status {login_response.status_code}")
+                if attempt == max_retries - 1:
+                    return False
+
+        print("[-] All login attempts failed")
+        return False
 
     def get_all_movies(self):
         """Fetch and parse all movies from all pages"""

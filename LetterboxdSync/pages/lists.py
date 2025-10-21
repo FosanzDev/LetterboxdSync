@@ -3,6 +3,7 @@ import reflex as rx
 from ..states.lists_state import ListsState
 from ..states.auth_state import AuthState
 from ..states.list_detail_state import ListDetailState
+from ..states.sync_state import SyncState
 from ..components.navbar import navbar
 
 
@@ -68,18 +69,69 @@ def lists_page() -> rx.Component:
                                                 overflow="hidden",
                                             ),
                                             ),
-                                        rx.button(
-                                            "View List",
-                                            on_click=lambda: [
-                                                ListDetailState.set_list_info(
-                                                    list_item["id"],
-                                                    list_item["name"],
-                                                    list_item["url"],
-                                                    list_item["film_count"]
+
+                                        rx.hstack(
+                                            rx.button(
+                                                "View List",
+                                                on_click=lambda: [
+                                                    ListDetailState.set_list_info(
+                                                        list_item["id"],
+                                                        list_item["name"],
+                                                        list_item["url"],
+                                                        list_item["film_count"]
+                                                    ),
+                                                    rx.redirect(f"/list/{list_item['id']}")
+                                                ],
+                                                size="2",
+                                                flex="1",
+                                            ),
+
+                                            # Conditional Share/Manage button
+                                            rx.cond(
+                                                SyncState.shared_list_status.get(list_item["url"], False),
+                                                # Manage button (list is already shared)
+                                                rx.button(
+                                                    rx.cond(
+                                                        SyncState.is_loading,
+                                                        rx.spinner(size="2"),
+                                                        rx.hstack(
+                                                            rx.icon("settings"),
+                                                            rx.text("Manage"),
+                                                            spacing="1",
+                                                        ),
+                                                    ),
+                                                    on_click=lambda: SyncState.navigate_to_manage(list_item["url"]),
+                                                    disabled=SyncState.is_loading,
+                                                    size="2",
+                                                    variant="outline",
+                                                    color_scheme="green",
+                                                    flex="1",
                                                 ),
-                                                rx.redirect(f"/list/{list_item['id']}")
-                                            ],
-                                            size="2",
+                                                # Share button (list is not shared)
+                                                rx.button(
+                                                    rx.cond(
+                                                        SyncState.is_loading,
+                                                        rx.spinner(size="2"),
+                                                        rx.hstack(
+                                                            rx.icon("share"),
+                                                            rx.text("Share"),
+                                                            spacing="1",
+                                                        ),
+                                                    ),
+                                                    on_click=lambda: SyncState.share_list(
+                                                        list_item["id"],
+                                                        list_item["name"],
+                                                        list_item["url"]
+                                                    ),
+                                                    disabled=SyncState.is_loading,
+                                                    size="2",
+                                                    variant="outline",
+                                                    color_scheme="blue",
+                                                    flex="1",
+                                                ),
+                                            ),
+
+                                            spacing="2",
                                             width="100%",
                                         ),
                                         spacing="3",

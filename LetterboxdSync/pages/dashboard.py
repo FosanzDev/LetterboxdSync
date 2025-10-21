@@ -38,13 +38,12 @@ def dashboard_page() -> rx.Component:
                             rx.vstack(
                                 rx.heading("🔄 Sync Groups", size="5"),
                                 rx.text(
-                                    "Create and manage sync groups",
+                                    "Manage your shared lists and sync groups",
                                     color_scheme="gray",
                                 ),
-                                rx.button(
-                                    "Coming Soon",
-                                    size="3",
-                                    disabled=True,
+                                rx.link(
+                                    rx.button("Manage Syncs", size="3"),
+                                    href="/sync",
                                 ),
                                 spacing="3",
                                 align="start",
