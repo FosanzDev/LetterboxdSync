@@ -14,6 +14,12 @@ class ListsState(AuthState):
     user_lists: list[dict[str, str]] = []
     selected_list: dict[str, str] = {}
 
+    def on_load(self):
+        """Auto-load lists if none are cached."""
+        if len(self.user_lists) == 0 and not self.is_loading:
+            self.fetch_user_lists()
+
+
     def fetch_user_lists(self):
         """Fetch all lists for the current user."""
         if not self.is_authenticated:
