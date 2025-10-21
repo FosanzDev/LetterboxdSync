@@ -79,11 +79,17 @@ class ListsState(AuthState):
             self.set_error(f"Error: {str(e)}")
             self.set_loading(False)
 
-    def select_list(self, list_id: str, list_name: str, list_url: str):
+    def select_list(self, list_id: str, list_name: str, list_url: str, film_count: str = "0"):
         """Select a list."""
         self.selected_list = {
             "id": list_id,
             "name": list_name,
-            "url": list_url
+            "url": list_url,
+            "film_count": film_count
         }
-        return rx.redirect(f"/lists/{list_id}")
+        # Set the list detail state info
+        from .list_detail_state import ListDetailState
+        detail_state = self.get_state(ListDetailState)
+        detail_state.set_list_info(list_id, list_name, list_url, film_count)
+
+        return rx.redirect(f"/list/{list_id}")

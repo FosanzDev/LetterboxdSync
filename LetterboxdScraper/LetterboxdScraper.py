@@ -140,6 +140,43 @@ class LetterboxdScraper:
 
         return all_movies
 
+    def get_movies_by_page(self, page=1):
+        """
+        Fetch movies from a specific Letterboxd page (server-side pagination).
+
+        Args:
+            page (int): Page number (1-based)
+
+        Returns:
+            list: Movies from that specific page
+        """
+        if page == 1:
+            url = f"{self.list_url}/"
+        else:
+            url = f"{self.list_url}/page/{page}/"
+
+        print(f"\n[*] Fetching page {page}...")
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Referer": self.list_url,
+        }
+
+        try:
+            response = self.session.get(url, headers=headers, verify=self.verify_ssl)
+        except Exception as e:
+            print(f"[-] Failed to fetch page {page}: {e}")
+            return []
+
+        if response.status_code != 200:
+            print(f"[-] Failed to fetch page {page}. Status: {response.status_code}")
+            return []
+
+        movies_on_page = self.parse_movies(response.text)
+
+        return movies_on_page
+
     def has_next_page(self, html):
         """Check if there's a next page button"""
         soup = BeautifulSoup(html, 'html.parser')

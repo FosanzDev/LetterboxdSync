@@ -2,6 +2,7 @@
 import reflex as rx
 from ..states.lists_state import ListsState
 from ..states.auth_state import AuthState
+from ..states.list_detail_state import ListDetailState
 from ..components.navbar import navbar
 
 
@@ -69,11 +70,15 @@ def lists_page() -> rx.Component:
                                             ),
                                         rx.button(
                                             "View List",
-                                            on_click=lambda: ListsState.select_list(
-                                                list_item["id"],
-                                                list_item["name"],
-                                                list_item["url"]
-                                            ),
+                                            on_click=lambda: [
+                                                ListDetailState.set_list_info(
+                                                    list_item["id"],
+                                                    list_item["name"],
+                                                    list_item["url"],
+                                                    list_item["film_count"]
+                                                ),
+                                                rx.redirect(f"/list/{list_item['id']}")
+                                            ],
                                             size="2",
                                             width="100%",
                                         ),
