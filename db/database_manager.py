@@ -8,16 +8,26 @@ from typing import List, Optional, Tuple
 from cryptography.fernet import Fernet
 import os
 from contextlib import contextmanager
+from pathlib import Path
 
 from models.sync_models import SyncGroup, GroupMember, SyncMode, OperationType, SyncOperation
+from db.db_config import db_config
 
 
 class DatabaseManager:
-    def __init__(self, db_path: str = "letterboxd_sync.db"):
+    def __init__(self, db_path: str = None):
+        # Use centralized config if no specific path provided
+        if db_path is None:
+            db_path = db_config.get_sync_db_path()
+
         self.db_path = db_path
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+
         self.encryption_key = self._get_or_create_key()
         self.cipher = Fernet(self.encryption_key)
-        self._lock = threading.RLock()  # Add thread lock
+        self._lock = threading.RLock()
         self._init_database()
 
     @contextmanager
@@ -47,11 +57,14 @@ class DatabaseManager:
 
     def _get_or_create_key(self) -> bytes:
         """Get or create encryption key for credentials"""
-        key_file = "sync_key.key"
+        key_file = db_config.get_sync_key_path()
+
         if os.path.exists(key_file):
             with open(key_file, 'rb') as f:
                 return f.read()
         else:
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(key_file), exist_ok=True)
             key = Fernet.generate_key()
             with open(key_file, 'wb') as f:
                 f.write(key)

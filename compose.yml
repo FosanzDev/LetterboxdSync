@@ -1,0 +1,20 @@
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000  # Frontend port
+      - 8000:8000  # Backend API port
+    depends_on:
+      - redis
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_PATH=/app/data
+  redis:
+    image: redis
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

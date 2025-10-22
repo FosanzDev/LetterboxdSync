@@ -3,6 +3,7 @@ import asyncio
 from typing import List, Optional, Dict, Tuple
 from datetime import datetime
 from db.database_manager import DatabaseManager
+from db.db_config import db_config
 from services.sync_service import SyncService
 from services.letterboxd_service import LetterboxdService
 from models.sync_models import GroupMember, SyncMode
@@ -14,7 +15,11 @@ logger = logging.getLogger(__name__)
 class SyncManager:
     """Main interface for the sync system with auto-polling support"""
 
-    def __init__(self, db_path: str = "letterboxd_sync.db"):
+    def __init__(self, db_path: str = None):
+        # Use centralized config if no specific path provided
+        if db_path is None:
+            db_path = db_config.get_sync_db_path()
+
         self.db = DatabaseManager(db_path)
         self.sync_service = SyncService(self.db)
         self.letterboxd_service = LetterboxdService()

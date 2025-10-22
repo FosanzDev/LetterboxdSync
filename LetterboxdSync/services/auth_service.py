@@ -11,29 +11,42 @@ import sys
 # Add parent directory to path to import LetterboxdScraper
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from LetterboxdScraper import LetterboxdScraper
+from db.db_config import db_config
 
 
 class AuthService:
     """Service for authentication and user management."""
 
-    def __init__(self, db_path: str = "letterboxd_users.db"):
+    def __init__(self, db_path: str = None):
+        # Use centralized config if no specific path provided
+        if db_path is None:
+            db_path = db_config.get_users_db_path()
+
         self.db_path = db_path
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+
         self.encryption_key = self._get_or_create_encryption_key()
         self.cipher = Fernet(self.encryption_key)
         self._init_database()
 
     def _get_or_create_encryption_key(self) -> bytes:
         """Get or create encryption key for credentials."""
-        key_file = "auth_key.key"
+        key_file = db_config.get_auth_key_path()
+
         if os.path.exists(key_file):
             with open(key_file, 'rb') as f:
                 return f.read()
         else:
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(key_file), exist_ok=True)
             key = Fernet.generate_key()
             with open(key_file, 'wb') as f:
                 f.write(key)
             return key
 
+    # ... rest of the methods remain exactly the same ...
     def _encrypt_credential(self, credential: str) -> str:
         """Encrypt a credential string."""
         return self.cipher.encrypt(credential.encode()).decode()
@@ -47,19 +60,19 @@ class AuthService:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username VARCHAR(100) UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    salt TEXT NOT NULL,
-                    password_encrypted TEXT NOT NULL,
-                    letterboxd_session TEXT,
-                    session_token TEXT UNIQUE,
-                    session_expires TIMESTAMP,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    last_login TIMESTAMP
-                )
-            ''')
+                           CREATE TABLE IF NOT EXISTS users (
+                                                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                                username VARCHAR(100) UNIQUE NOT NULL,
+                               password_hash TEXT NOT NULL,
+                               salt TEXT NOT NULL,
+                               password_encrypted TEXT NOT NULL,
+                               letterboxd_session TEXT,
+                               session_token TEXT UNIQUE,
+                               session_expires TIMESTAMP,
+                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                               last_login TIMESTAMP
+                               )
+                           ''')
             conn.commit()
 
     def _hash_password(self, password: str, salt: str) -> str:
@@ -115,13 +128,13 @@ class AuthService:
                     session_expires = datetime.now() + timedelta(days=7)
 
                     cursor.execute('''
-                        UPDATE users 
-                        SET session_token = ?, session_expires = ?, 
-                            last_login = CURRENT_TIMESTAMP,
-                            letterboxd_session = ?,
-                            password_encrypted = ?
-                        WHERE id = ?
-                    ''', (session_token, session_expires, letterboxd_session, password_encrypted, user_id))
+                                   UPDATE users
+                                   SET session_token = ?, session_expires = ?,
+                                       last_login = CURRENT_TIMESTAMP,
+                                       letterboxd_session = ?,
+                                       password_encrypted = ?
+                                   WHERE id = ?
+                                   ''', (session_token, session_expires, letterboxd_session, password_encrypted, user_id))
                     conn.commit()
 
                     return True, session_token, "Login successful"
@@ -134,12 +147,12 @@ class AuthService:
                 session_expires = datetime.now() + timedelta(days=7)
 
                 cursor.execute('''
-                    INSERT INTO users 
-                    (username, password_hash, salt, password_encrypted, session_token, 
-                     session_expires, last_login, letterboxd_session)
-                    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
-                ''', (username, password_hash, salt, password_encrypted, session_token,
-                      session_expires, letterboxd_session))
+                               INSERT INTO users
+                               (username, password_hash, salt, password_encrypted, session_token,
+                                session_expires, last_login, letterboxd_session)
+                               VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                               ''', (username, password_hash, salt, password_encrypted, session_token,
+                                     session_expires, letterboxd_session))
                 conn.commit()
 
                 return True, session_token, "Account created successfully"
@@ -152,10 +165,10 @@ class AuthService:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT id, username, session_expires, letterboxd_session, password_encrypted
-                FROM users 
-                WHERE session_token = ?
-            ''', (session_token,))
+                           SELECT id, username, session_expires, letterboxd_session, password_encrypted
+                           FROM users
+                           WHERE session_token = ?
+                           ''', (session_token,))
 
             result = cursor.fetchone()
 
@@ -181,9 +194,9 @@ class AuthService:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                UPDATE users 
-                SET session_token = NULL, session_expires = NULL
-                WHERE session_token = ?
-            ''', (session_token,))
+                           UPDATE users
+                           SET session_token = NULL, session_expires = NULL
+                           WHERE session_token = ?
+                           ''', (session_token,))
             conn.commit()
             return cursor.rowcount > 0
