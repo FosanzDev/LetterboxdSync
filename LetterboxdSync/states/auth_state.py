@@ -58,31 +58,45 @@ class AuthState(BaseState):
 
     def login(self):
         """Login or register user."""
+        # Validate inputs first
         if not self.username or not self.password:
             self.set_error("Please fill in all fields")
             return
 
-        self.set_loading(True)
+        # Clear messages and set loading state
         self.clear_messages()
+        self.set_loading(True)
 
-        # Use _auth_service instead of self.auth_service
-        success, session_token, message = _auth_service.register_or_login(
-            self.username,
-            self.password
-        )
+        # Force a yield to update UI with loading state
+        yield
 
-        self.set_loading(False)
+        try:
+            # Perform the authentication (this is blocking and may take time)
+            success, session_token, message = _auth_service.register_or_login(
+                self.username,
+                self.password
+            )
 
-        if success:
-            self.is_authenticated = True
-            self.current_user = self.username
-            self.session_token = session_token
-            self.set_success(message)
-            self.password = ""
-            # Clear the success message after a short delay before redirect
-            return rx.redirect("/dashboard")
-        else:
-            self.set_error(message)
+            if success:
+                self.is_authenticated = True
+                self.current_user = self.username
+                self.session_token = session_token
+                self.password = ""  # Clear password from memory
+                self.set_success(message)
+                self.set_loading(False)
+
+                # Redirect to dashboard
+                yield rx.redirect("/dashboard")
+            else:
+                self.set_error(message)
+                self.set_loading(False)
+                yield
+
+        except Exception as e:
+            # Handle any unexpected errors
+            self.set_error(f"An error occurred: {str(e)}")
+            self.set_loading(False)
+            yield
 
     def logout(self):
         """Logout user."""
