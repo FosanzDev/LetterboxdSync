@@ -110,13 +110,49 @@ class LetterboxdScraper:
             if login_response.status_code == 200:
                 try:
                     response_json = login_response.json()
-                    if response_json.get("result") == "success":
+                    result = response_json.get("result")
+
+                    if result == "success":
                         print("[+] Login successful!")
                         return True
-                    else:
-                        print(f"[-] Login failed: {response_json.get('messages')}")
+                    elif result == "error":
+                        # Login failed - check if it's a credential error or retryable error
+                        messages = response_json.get('messages', [])
+                        error_message = messages[0] if messages else "Unknown error"
+                        print(f"[-] Login failed: {messages}")
+
+                        # Check if this is a credential/authentication error (don't retry these)
+                        normalized_message = error_message.lower().replace("'", "'").replace("'", "'")
+
+                        # Phrases that indicate credential/auth issues (non-retryable)
+                        auth_error_phrases = [
+                            "credentials don't match",
+                            "credentials do not match",
+                            "incorrect",
+                            "invalid",
+                            "wrong password",
+                            "human error",  # Letterboxd's specific phrasing
+                            "authentication failed"
+                        ]
+
+                        is_auth_error = any(phrase in normalized_message for phrase in auth_error_phrases)
+
+                        if is_auth_error:
+                            print("[-] Authentication error detected - not retrying")
+                            return False
+
+                        # For other errors (could be rate limiting, server issues, etc.), retry
+                        print(f"[-] Non-authentication error, will retry if attempts remain")
                         if attempt == max_retries - 1:
                             return False
+                        continue
+                    else:
+                        # Unexpected result value
+                        print(f"[-] Unexpected result value: {result}")
+                        if attempt == max_retries - 1:
+                            return False
+                        continue
+
                 except json.JSONDecodeError:
                     print("[-] Could not parse login response")
                     if attempt == max_retries - 1:
