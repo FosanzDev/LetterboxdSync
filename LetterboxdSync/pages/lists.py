@@ -93,7 +93,7 @@ def lists_page() -> rx.Component:
                                                     # Manage button (list is already shared)
                                                     rx.button(
                                                         rx.cond(
-                                                            SyncState.is_loading,
+                                                            SyncState.sync_loading,
                                                             rx.spinner(size="2"),
                                                             rx.hstack(
                                                                 rx.icon("settings"),
@@ -102,7 +102,7 @@ def lists_page() -> rx.Component:
                                                             ),
                                                         ),
                                                         on_click=lambda: SyncState.navigate_to_manage(list_item["url"]),
-                                                        disabled=SyncState.is_loading,
+                                                        disabled=SyncState.sync_loading,
                                                         size="2",
                                                         variant="outline",
                                                         color_scheme="green",
@@ -111,7 +111,7 @@ def lists_page() -> rx.Component:
                                                     # Share button (list is not shared)
                                                     rx.button(
                                                         rx.cond(
-                                                            SyncState.is_loading,
+                                                            SyncState.sync_loading,
                                                             rx.spinner(size="2"),
                                                             rx.hstack(
                                                                 rx.icon("share"),
@@ -124,7 +124,7 @@ def lists_page() -> rx.Component:
                                                             list_item["name"],
                                                             list_item["url"]
                                                         ),
-                                                        disabled=SyncState.is_loading,
+                                                        disabled=SyncState.sync_loading,
                                                         size="2",
                                                         variant="outline",
                                                         color_scheme="blue",
@@ -158,10 +158,6 @@ def lists_page() -> rx.Component:
                                         size="4",
                                         color_scheme="gray",
                                     ),
-                                    rx.button(
-                                        "Load Lists",
-                                        on_click=ListsState.fetch_user_lists,
-                                    ),
                                     spacing="3",
                                 ),
                                 min_height="40vh",
@@ -190,6 +186,7 @@ def lists_page() -> rx.Component:
                         padding_y="2rem",
                     ),
                     max_width="1400px",
+                    on_mount=ListsState.on_load,
                 ),
             )
         ),

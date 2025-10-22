@@ -8,6 +8,7 @@ class SyncState(AuthState):
     shared_lists: list[dict[str, str]] = []
     sync_groups: list[dict[str, str]] = []
     shared_list_status: dict[str, bool] = {}
+    sync_loading: bool = False
 
     def _get_sync_manager(self):
         """Get a sync manager instance."""
@@ -20,6 +21,30 @@ class SyncState(AuthState):
         # The status will be checked when share/unshare is clicked
         if not hasattr(self, 'shared_list_status') or not self.shared_list_status:
             self.shared_list_status = {}
+
+    def refresh_shared_status_for_lists(self, user_lists: list[dict[str, str]]):
+        """Refresh shared status for a batch of lists."""
+        self.sync_loading = True
+        yield  # allows the spinner to show
+
+        try:
+            sync_manager = self._get_sync_manager()
+            db = sync_manager.db
+
+            new_status = {}
+            for list_item in user_lists:
+                list_url = list_item.get("url", "")
+                if list_url:
+                    new_status[list_url] = db.is_list_already_shared(list_url)
+
+            self.shared_list_status = new_status
+
+        except Exception as e:
+            print(f"Error refreshing shared list status: {e}")
+
+        finally:
+            self.sync_loading = False
+            yield  # triggers a frontend re-render with new button states
 
     def check_if_list_shared(self, list_url: str) -> bool:
         """Check if a specific list is shared - called on demand"""
@@ -49,8 +74,9 @@ class SyncState(AuthState):
             self.set_error("This list is already shared!")
             return
 
-        self.set_loading(True)
+        self.sync_loading = True
         self.clear_messages()
+        yield
 
         try:
             # Use _auth_service to get credentials
@@ -60,8 +86,8 @@ class SyncState(AuthState):
             if not valid:
                 self.set_error("Session expired. Please login again.")
                 self.is_authenticated = False
-                self.set_loading(False)
-                return
+                self.sync_loading = False
+                return None
 
             sync_manager = self._get_sync_manager()
 
@@ -91,7 +117,7 @@ class SyncState(AuthState):
         except Exception as e:
             self.set_error(f"Error sharing list: {str(e)}")
         finally:
-            self.set_loading(False)
+            self.sync_loading = False
 
     def navigate_to_manage(self, list_url: str):
         """Navigate to the manage page for a sync group."""
@@ -119,8 +145,9 @@ class SyncState(AuthState):
             self.set_error("Please login first")
             return
 
-        self.set_loading(True)
+        self.sync_loading = True
         self.clear_messages()
+        yield
 
         try:
             sync_manager = self._get_sync_manager()
@@ -131,7 +158,7 @@ class SyncState(AuthState):
 
             if not sync_group_info:
                 self.set_error("List is not shared")
-                self.set_loading(False)
+                self.sync_loading = False
                 return
 
             # Deactivate the sync group
@@ -155,7 +182,7 @@ class SyncState(AuthState):
         except Exception as e:
             self.set_error(f"Error unsharing list: {str(e)}")
         finally:
-            self.set_loading(False)
+            self.sync_loading = False
 
     def load_sync_groups(self):
         """Load all sync groups for the current user."""
@@ -183,8 +210,9 @@ class SyncState(AuthState):
 
     async def sync_group_now(self, group_id: str):
         """Trigger immediate sync of a specific group."""
-        self.set_loading(True)
+        self.sync_loading = True
         self.clear_messages()
+        yield
 
         try:
             sync_manager = self._get_sync_manager()
@@ -198,4 +226,4 @@ class SyncState(AuthState):
         except Exception as e:
             self.set_error(f"Error syncing group: {str(e)}")
         finally:
-            self.set_loading(False)
+            self.sync_loading = False

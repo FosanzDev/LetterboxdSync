@@ -2,6 +2,7 @@
 import reflex as rx
 from .auth_state import AuthState
 from LetterboxdScraper import LetterboxdScraper
+from ..states.sync_state import SyncState
 
 
 class ListsState(AuthState):
@@ -9,11 +10,16 @@ class ListsState(AuthState):
 
     user_lists: list[dict[str, str]] = []
     selected_list: dict[str, str] = {}
+    sharing_status_loading: bool = False
 
     def on_load(self):
-        """Auto-load lists if none are cached."""
+        """Auto-load lists and refresh shared status."""
         if len(self.user_lists) == 0 and not self.is_loading:
-            self.fetch_user_lists()
+            # Return the event instead of calling it directly
+            return ListsState.fetch_user_lists
+        else:
+            # Return an event to trigger a reactive SyncState call
+            return SyncState.refresh_shared_status_for_lists(self.user_lists)
 
     def fetch_user_lists(self):
         """Fetch all lists for the current user."""
@@ -21,8 +27,12 @@ class ListsState(AuthState):
             self.set_error("Please login first")
             return
 
-        self.set_loading(True)
+        # Clear messages and set loading state
         self.clear_messages()
+        self.set_loading(True)
+
+        # Force UI update to show spinner
+        yield
 
         try:
             # Use _auth_service (imported from auth_state)
@@ -34,6 +44,7 @@ class ListsState(AuthState):
                 self.set_error("Session expired. Please login again.")
                 self.is_authenticated = False
                 self.set_loading(False)
+                yield
                 return
 
             scraper = LetterboxdScraper(
@@ -45,6 +56,7 @@ class ListsState(AuthState):
             if not scraper.login():
                 self.set_error("Failed to connect to Letterboxd")
                 self.set_loading(False)
+                yield
                 return
 
             lists = scraper.get_all_lists(user_data['username'])
@@ -64,6 +76,7 @@ class ListsState(AuthState):
                     converted_lists.append(converted_list)
 
                 self.user_lists = converted_lists
+                yield
 
                 # Trigger shared status check
                 self.check_shared_status_for_lists()
@@ -73,31 +86,17 @@ class ListsState(AuthState):
                 self.set_error("No lists found")
 
             self.set_loading(False)
+            yield
 
         except Exception as e:
             self.set_error(f"Error: {str(e)}")
             self.set_loading(False)
+            yield
 
     def check_shared_status_for_lists(self):
-        """Check shared status for all current lists and update SyncState"""
-        try:
-            from sync_manager import SyncManager
-            sync_manager = SyncManager()
-            db = sync_manager.db
-
-            # Check shared status for each list
-            status_dict = {}
-            for list_item in self.user_lists:
-                list_url = list_item.get("url", "")
-                if list_url:
-                    status_dict[list_url] = db.is_list_already_shared(list_url)
-
-            # Update the shared status in the current state
-            # We'll add this to our own state instead of trying to access SyncState
-            self.update_shared_status(status_dict)
-
-        except Exception as e:
-            print(f"Error checking shared lists: {e}")
+        """Delegate to SyncState to refresh shared statuses."""
+        from ..states.sync_state import SyncState
+        yield from SyncState.refresh_shared_status_for_lists(self.user_lists)
 
     def update_shared_status(self, status_dict: dict):
         """Update shared status - this will trigger SyncState update via event"""
