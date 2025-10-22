@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 ENV REDIS_URL=redis://redis PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app:$PYTHONPATH
 
 WORKDIR /app
 COPY . .
