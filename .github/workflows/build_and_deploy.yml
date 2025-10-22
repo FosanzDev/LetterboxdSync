@@ -1,0 +1,95 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]  # Change to your main branch
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create deployment package
+        run: |
+          # Create a temporary directory for the package
+          mkdir -p deploy-package
+          
+          # Copy all files except sensitive ones and build artifacts
+          rsync -av --progress . deploy-package/ \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.venv' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='.web' \
+            --exclude='.states' \
+            --exclude='data/' \
+            --exclude='node_modules'
+          
+          # Create the zip file
+          cd deploy-package
+          zip -r ../letterboxdsync-deploy.zip .
+          cd ..
+          
+          # Clean up
+          rm -rf deploy-package
+
+      - name: Copy files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "letterboxdsync-deploy.zip"
+          target: "/tmp/"
+
+      - name: Deploy on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # Set deployment directory
+            DEPLOY_DIR="/home/${{ secrets.VPS_USERNAME }}/letterboxdsync"
+            
+            # Create deployment directory if it doesn't exist
+            mkdir -p $DEPLOY_DIR
+            
+            # Stop existing containers
+            cd $DEPLOY_DIR
+            if [ -f "compose.yml" ]; then
+              docker compose down || true
+            fi
+            
+            # Backup existing data directory if it exists
+            if [ -d "$DEPLOY_DIR/data" ]; then
+              cp -r $DEPLOY_DIR/data /tmp/letterboxdsync-data-backup-$(date +%Y%m%d-%H%M%S)
+            fi
+            
+            # Extract new deployment
+            cd $DEPLOY_DIR
+            unzip -o /tmp/letterboxdsync-deploy.zip
+            
+            # Restore data directory if backup exists
+            if [ -d "/tmp/letterboxdsync-data-backup-$(date +%Y%m%d-%H%M%S)" ]; then
+              cp -r /tmp/letterboxdsync-data-backup-$(date +%Y%m%d-%H%M%S)/* $DEPLOY_DIR/data/ || true
+            fi
+            
+            # Create data directory if it doesn't exist
+            mkdir -p $DEPLOY_DIR/data
+            
+            # Pull latest images and start services
+            docker compose pull
+            docker compose up -d --build
+            
+            # Clean up
+            rm /tmp/letterboxdsync-deploy.zip
+            
+            # Show status
+            echo "Deployment completed. Container status:"
+            docker compose ps
