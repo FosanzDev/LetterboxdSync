@@ -4,6 +4,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - 9300:3000  # Frontend port
+      - 8300:8000
     depends_on:
       - redis
     volumes:
