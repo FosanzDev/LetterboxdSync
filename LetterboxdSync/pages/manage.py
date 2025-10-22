@@ -100,10 +100,10 @@ def manage_sync_page() -> rx.Component:
                             rx.link(
                                 rx.button(
                                     rx.icon("arrow-left"),
-                                    "Back to Lists",
+                                    "Back to Syncs",
                                     variant="soft",
                                 ),
-                                href="/lists",
+                                href="/sync",
                             ),
                             width="100%",
                         ),
@@ -166,6 +166,23 @@ def manage_sync_page() -> rx.Component:
                                     # Buttons
                                     rx.box(
                                         rx.hstack(
+                                            rx.button(
+                                                rx.cond(
+                                                    ManageSyncState.is_loading,
+                                                    rx.spinner(size="2"),
+                                                    rx.hstack(
+                                                        rx.icon("eye"),
+                                                        rx.text("View List"),
+                                                        spacing="1",
+                                                    ),
+                                                ),
+                                                on_click=lambda: rx.redirect(
+                                                    f"/list/{ManageSyncState.group_info['id']}"),
+                                                disabled=ManageSyncState.is_loading,
+                                                color_scheme="blue",
+                                                size="3",
+                                                width="100%",
+                                            ),
                                             rx.button(
                                                 rx.cond(
                                                     ManageSyncState.is_loading,
