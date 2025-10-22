@@ -7,9 +7,9 @@ def navbar() -> rx.Component:
     """Create navigation bar with responsive visibility."""
     return rx.box(
         rx.hstack(
-            # Left side — Logo/Title + desktop links
+            # Left side — title + desktop links
             rx.hstack(
-                # ✅ Title: always visible (no desktop/mobile-only gap)
+                # Title
                 rx.link(
                     rx.heading(
                         "📽️ LB Sync",
@@ -23,21 +23,60 @@ def navbar() -> rx.Component:
                     ),
                 ),
 
-                # ✅ Desktop / tablet navigation links
+                # Desktop links
                 rx.cond(
                     AuthState.is_authenticated,
                     rx.hstack(
                         rx.link(
-                            rx.button("Dashboard", variant="ghost", size="2"),
+                            rx.button(
+                                rx.hstack(
+                                    rx.icon("layout-dashboard", size=16),
+                                    rx.text("Dashboard"),
+                                    spacing="2",
+                                    align_items="center",  # ✅ vertically center icon + text
+                                ),
+                                variant="ghost",
+                                size="2",
+                                height="100%",  # ensures button fills navbar height
+                                display="flex",
+                                align_items="center",  # ✅ vertically center content inside button
+                            ),
                             href="/dashboard",
                         ),
                         rx.link(
-                            rx.button("My Lists", variant="ghost", size="2"),
+                            rx.button(
+                                rx.hstack(
+                                    rx.icon("list", size=16),
+                                    rx.text("My Lists"),
+                                    spacing="2",
+                                    align_items="center",
+                                ),
+                                variant="ghost",
+                                size="2",
+                                height="100%",
+                                display="flex",
+                                align_items="center",
+                            ),
                             href="/lists",
                         ),
-                        spacing="3",  # ✅ slightly larger space between buttons
+                        rx.link(
+                            rx.button(
+                                rx.hstack(
+                                    rx.icon("refresh-cw", size=16),
+                                    rx.text("My Sync Groups"),
+                                    spacing="2",
+                                    align_items="center",
+                                ),
+                                variant="ghost",
+                                size="2",
+                                height="100%",
+                                display="flex",
+                                align_items="center",
+                            ),
+                            href="/sync",
+                        ),
+                        spacing="5",  # gap between buttons
                         display=["none", "none", "flex", "flex"],
-                        # visible from md (≥768px) upward
                     ),
                 ),
                 spacing="4",
@@ -90,6 +129,15 @@ def navbar() -> rx.Component:
                                     spacing="2",
                                 ),
                                 on_click=rx.redirect("/lists"),
+                                display=["block", "block", "none", "none"],
+                            ),
+                            rx.menu.item(
+                                rx.hstack(
+                                    rx.icon("refresh-cw", size=16),
+                                    rx.text("My Sync Groups"),
+                                    spacing="2",
+                                ),
+                                on_click=rx.redirect("/sync"),
                                 display=["block", "block", "none", "none"],
                             ),
                             rx.menu.separator(display=["block", "block", "none", "none"]),
