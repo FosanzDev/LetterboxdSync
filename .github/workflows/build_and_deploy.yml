@@ -2,7 +2,7 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [ main ]  # Change to your main branch
+    branches: [ master ]  # Change to your main branch
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
