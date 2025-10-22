@@ -15,7 +15,13 @@ class ListDetailState(AuthState):
     total_count: int = 0
     total_pages: int = 0
     has_more: bool = False
-    movies_per_letterboxd_page: int = 28  # Letterboxd shows ~28 movies per page
+    movies_per_letterboxd_page: int = 100
+    list_detail_loading: bool = False
+
+    def set_loading(self, loading: bool):
+        """Set loading state."""
+        self.list_detail_loading = loading
+        return
 
     def set_list_info(self, list_id: str, list_name: str, list_url: str, film_count: str = "0"):
         """Set the current list information."""
@@ -40,6 +46,9 @@ class ListDetailState(AuthState):
         # First check authentication like other pages
         self.clear_messages()
         self.is_hydrated = True
+        self.set_loading(True)
+
+        yield
 
         if not self.check_auth():
             self._clear_user_data()
@@ -132,15 +141,15 @@ class ListDetailState(AuthState):
 
     def next_page(self):
         """Load next page of movies."""
-        if self.has_more and not self.is_loading:
+        if self.has_more and not self.list_detail_loading:
             self.load_movies_page(self.current_page + 1)
 
     def prev_page(self):
         """Load previous page of movies."""
-        if self.current_page > 1 and not self.is_loading:
+        if self.current_page > 1 and not self.list_detail_loading:
             self.load_movies_page(self.current_page - 1)
 
     def go_to_page(self, page: int):
         """Go to specific page."""
-        if 1 <= page <= self.total_pages and not self.is_loading:
+        if 1 <= page <= self.total_pages and not self.list_detail_loading:
             self.load_movies_page(page)

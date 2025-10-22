@@ -4,16 +4,17 @@ from ..states.auth_state import AuthState
 
 
 def navbar() -> rx.Component:
-    """Create navigation bar with mobile support."""
+    """Create navigation bar with responsive visibility."""
     return rx.box(
         rx.hstack(
-            # Left side - Logo/Title (responsive)
+            # Left side — Logo/Title + desktop links
             rx.hstack(
+                # ✅ Title: always visible (no desktop/mobile-only gap)
                 rx.link(
                     rx.heading(
-                        rx.desktop_only("📽️ Letterboxd Sync"),
-                        rx.mobile_only("📽️ LB Sync"),
-                        size="5",  # Reduced from 6
+                        "📽️ LB Sync",
+                        size="5",
+                        white_space="nowrap",
                     ),
                     href=rx.cond(
                         AuthState.is_authenticated,
@@ -21,27 +22,29 @@ def navbar() -> rx.Component:
                         "/",
                     ),
                 ),
-                # Desktop navigation links (only on desktop)
-                rx.desktop_only(
-                    rx.cond(
-                        AuthState.is_authenticated,
-                        rx.hstack(
-                            rx.link(
-                                rx.button("Dashboard", variant="ghost", size="2"),
-                                href="/dashboard"
-                            ),
-                            rx.link(
-                                rx.button("My Lists", variant="ghost", size="2"),
-                                href="/lists"
-                            ),
-                            spacing="2",
+
+                # ✅ Desktop / tablet navigation links
+                rx.cond(
+                    AuthState.is_authenticated,
+                    rx.hstack(
+                        rx.link(
+                            rx.button("Dashboard", variant="ghost", size="2"),
+                            href="/dashboard",
                         ),
+                        rx.link(
+                            rx.button("My Lists", variant="ghost", size="2"),
+                            href="/lists",
+                        ),
+                        spacing="3",  # ✅ slightly larger space between buttons
+                        display=["none", "none", "flex", "flex"],
+                        # visible from md (≥768px) upward
                     ),
                 ),
                 spacing="4",
+                align="center",
             ),
 
-            # Right side - User menu and color mode
+            # Right side — user menu & color mode toggle
             rx.hstack(
                 rx.cond(
                     AuthState.is_authenticated,
@@ -49,15 +52,17 @@ def navbar() -> rx.Component:
                         rx.menu.trigger(
                             rx.button(
                                 rx.icon("user", size=18),
-                                rx.desktop_only(
-                                    rx.text(AuthState.current_user, size="2"),
+                                rx.text(
+                                    AuthState.current_user,
+                                    size="2",
+                                    display=["none", "none", "block", "block"],
                                 ),
                                 variant="soft",
                                 size="2",
                             ),
                         ),
                         rx.menu.content(
-                            # User info (always shown in menu)
+                            # User info (always shown)
                             rx.menu.item(
                                 rx.hstack(
                                     rx.icon("user", size=16),
@@ -68,9 +73,7 @@ def navbar() -> rx.Component:
                             ),
                             rx.menu.separator(),
 
-                            # Mobile-only Menu Items (use display array to avoid wrappers)
-                            # display array uses responsive breakpoints: [base, sm, md, lg, ...]
-                            # Show only at base/mobile -> ["block", "none", "none", "none"]
+                            # ✅ Mobile-only menu items (visible below md)
                             rx.menu.item(
                                 rx.hstack(
                                     rx.icon("layout-dashboard", size=16),
@@ -78,7 +81,7 @@ def navbar() -> rx.Component:
                                     spacing="2",
                                 ),
                                 on_click=rx.redirect("/dashboard"),
-                                display=["block", "none", "none", "none"],
+                                display=["block", "block", "none", "none"],
                             ),
                             rx.menu.item(
                                 rx.hstack(
@@ -87,13 +90,11 @@ def navbar() -> rx.Component:
                                     spacing="2",
                                 ),
                                 on_click=rx.redirect("/lists"),
-                                display=["block", "none", "none", "none"],
+                                display=["block", "block", "none", "none"],
                             ),
-                            rx.menu.separator(
-                                display=["block", "none", "none", "none"],
-                            ),
+                            rx.menu.separator(display=["block", "block", "none", "none"]),
 
-                            # Logout (always shown)
+                            # Logout (always)
                             rx.menu.item(
                                 rx.hstack(
                                     rx.icon("log-out", size=16),
@@ -109,15 +110,17 @@ def navbar() -> rx.Component:
                     rx.link(
                         rx.button(
                             rx.icon("log-in", size=18),
-                            rx.desktop_only(rx.text("Login")),
-                            size="2"
+                            rx.text("Login", display=["none", "none", "block", "block"]),
+                            size="2",
                         ),
-                        href="/login"
+                        href="/login",
                     ),
                 ),
                 rx.color_mode.button(size="2"),
                 spacing="2",
+                align="center",
             ),
+
             justify="between",
             align="center",
             width="100%",

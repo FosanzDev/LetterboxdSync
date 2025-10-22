@@ -15,6 +15,12 @@ class AuthState(BaseState):
     session_token: str = ""
     is_hydrated: bool = False
     redirect_to: str = ""
+    auth_loading: bool = False
+
+    def set_loading(self, loading: bool):
+        """Set loading state."""
+        self.auth_loading = loading
+        return
 
     def set_username(self, value: str):
         self.username = value
@@ -65,7 +71,7 @@ class AuthState(BaseState):
 
         # Clear messages and set loading state
         self.clear_messages()
-        self.set_loading(True)
+        self.auth_loading = True
 
         # Force a yield to update UI with loading state
         yield
@@ -83,19 +89,19 @@ class AuthState(BaseState):
                 self.session_token = session_token
                 self.password = ""  # Clear password from memory
                 self.set_success(message)
-                self.set_loading(False)
+                self.auth_loading = False
 
                 # Redirect to dashboard
                 yield rx.redirect("/dashboard")
             else:
                 self.set_error(message)
-                self.set_loading(False)
+                self.auth_loading = False
                 yield
 
         except Exception as e:
             # Handle any unexpected errors
             self.set_error(f"An error occurred: {str(e)}")
-            self.set_loading(False)
+            self.auth_loading = False
             yield
 
     def logout(self):

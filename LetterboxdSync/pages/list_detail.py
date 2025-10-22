@@ -6,60 +6,41 @@ from ..components.navbar import navbar
 
 
 def movie_list_item(movie) -> rx.Component:
-    """Individual movie list item component."""
+    """Individual movie list item component with rating fixed at bottom."""
     return rx.card(
         rx.vstack(
             # Movie title at the top
             rx.heading(
                 movie["name"],
-                size="4",
+                size="2",
                 width="100%",
-                margin_bottom="0.5rem",
+                text_align="center",
+                no_of_lines=2,  # optional: prevents overflow
             ),
 
-            # Bottom section with year on left and rating on right
-            rx.hstack(
-                # Year badge on the left
-                rx.hstack(
-                    rx.cond(
-                        movie["year"] != "",
-                        rx.badge(
-                            movie["year"],
-                            variant="soft",
-                            color_scheme="blue",
-                        ),
-                        ),
-                    spacing="2",
+            # Spacer pushes the badge to the bottom
+            rx.spacer(),
+
+            # Rating badge fixed at bottom
+            rx.cond(
+                (movie["rating"] != "") & (movie["rating"] != "None"),
+                rx.badge(
+                    f"⭐ {movie['rating']}/10",
+                    variant="soft",
+                    color_scheme="yellow",
+                    size="2",
                 ),
-
-                # Spacer to push rating to the right
-                rx.spacer(),
-
-                # Rating badge on the right
-                rx.hstack(
-                    rx.cond(
-                        (movie["rating"] != "") & (movie["rating"] != "None"),
-                        rx.badge(
-                            f"⭐ {movie['rating']}/10",
-                            variant="soft",
-                            color_scheme="yellow",
-                        ),
-                        ),
-                    spacing="2",
-                ),
-
-                width="100%",
-                align="center",
-                justify="between",
             ),
 
-            spacing="3",
-            align="start",
+            align="center",
+            justify="between",  # key: pushes rating to bottom
+            height="100%",            # makes vstack fill the card vertically
             width="100%",
         ),
         width="100%",
         cursor="pointer",
-        padding="1.5rem",
+        padding="1rem",
+        height="100%",       # ensure consistent height for equal cards
     )
 
 
@@ -72,7 +53,7 @@ def pagination_controls() -> rx.Component:
             disabled=rx.cond(
                 ListDetailState.current_page == 1,
                 True,
-                ListDetailState.is_loading,
+                ListDetailState.list_detail_loading,
                 ),
             variant="soft",
         ),
@@ -86,7 +67,7 @@ def pagination_controls() -> rx.Component:
             disabled=rx.cond(
                 ~ListDetailState.has_more,
                 True,
-                ListDetailState.is_loading,
+                ListDetailState.list_detail_loading,
             ),
             variant="soft",
         ),
@@ -130,7 +111,7 @@ def list_detail_page() -> rx.Component:
                         ),
 
                         rx.cond(
-                            ListDetailState.is_loading & (ListDetailState.current_page == 1),
+                            ListDetailState.list_detail_loading & (ListDetailState.current_page == 1),
                             rx.center(
                                 rx.vstack(
                                     rx.spinner(size="3"),
@@ -144,10 +125,14 @@ def list_detail_page() -> rx.Component:
                                 ListDetailState.movies.length() > 0,
                                 rx.vstack(
                                     # Movies list
-                                    rx.vstack(
+                                    rx.grid(
                                         rx.foreach(
                                             ListDetailState.movies,
                                             movie_list_item,
+                                        ),
+                                        columns=rx.breakpoints(
+                                            initial="3",
+                                            md="5",
                                         ),
                                         spacing="2",
                                         width="100%",

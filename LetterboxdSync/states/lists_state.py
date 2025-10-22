@@ -11,10 +11,16 @@ class ListsState(AuthState):
     user_lists: list[dict[str, str]] = []
     selected_list: dict[str, str] = {}
     sharing_status_loading: bool = False
+    lists_loading: bool = False
+
+    def set_loading(self, loading: bool):
+        """Set loading state."""
+        self.lists_loading = loading
+        return
 
     def on_load(self):
         """Auto-load lists and refresh shared status."""
-        if len(self.user_lists) == 0 and not self.is_loading:
+        if len(self.user_lists) == 0:
             # Return the event instead of calling it directly
             return ListsState.fetch_user_lists
         else:

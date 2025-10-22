@@ -15,7 +15,7 @@ def member_card(member) -> rx.Component:
                     member["is_master"] == "True",
                     rx.badge("Master", variant="solid", color_scheme="gold", size="2"),
                     rx.badge("Member", variant="soft", color_scheme="blue", size="2"),
-                    ),
+                ),
                 spacing="2",
                 align="center",
                 justify="between",
@@ -24,21 +24,22 @@ def member_card(member) -> rx.Component:
             rx.text(
                 f"Joined: {member['joined_at']}",
                 size="2",
-                color_scheme="gray"
+                color_scheme="gray",
             ),
             rx.text(
                 f"List: {member['list_url']}",
                 size="2",
                 color_scheme="gray",
                 width="100%",
-                word_break="break-all",  # Allow URL to break across lines
+                word_break="break-all",
             ),
             align="start",
-            spacing="2",  # Increased spacing
+            spacing="2",
             width="100%",
         ),
         width="100%",
         padding="1.5rem",
+        height="100%",
     )
 
 
@@ -49,15 +50,11 @@ def unshare_confirmation_dialog() -> rx.Component:
             rx.vstack(
                 rx.dialog.title("Unshare Sync Group"),
                 rx.dialog.description(
-                    "Are you sure you want to unshare this sync group? This action cannot be undone and all members will lose access to the shared list."
+                    "Are you sure you want to unshare this sync group? This action cannot be undone and all members will lose access."
                 ),
                 rx.hstack(
                     rx.dialog.close(
-                        rx.button(
-                            "Cancel",
-                            variant="soft",
-                            color_scheme="gray",
-                        )
+                        rx.button("Cancel", variant="soft", color_scheme="gray"),
                     ),
                     rx.button(
                         rx.cond(
@@ -84,17 +81,21 @@ def unshare_confirmation_dialog() -> rx.Component:
 
 
 def manage_sync_page() -> rx.Component:
-    """Manage sync group page component."""
+    """Manage sync group page component (responsive and consistent)."""
     return rx.cond(
         AuthState.is_authenticated,
         rx.fragment(
             navbar(),
             unshare_confirmation_dialog(),
-            rx.script(f"if (window.location.pathname.includes('/manage-sync/')) {{ const syncCode = window.location.pathname.split('/manage-sync/')[1]; fetch('/api/load_sync_group/' + syncCode); }}"),
+            rx.script(
+                "if (window.location.pathname.includes('/manage-sync/')) { "
+                "const syncCode = window.location.pathname.split('/manage-sync/')[1]; "
+                "fetch('/api/load_sync_group/' + syncCode); }"
+            ),
             rx.center(
                 rx.container(
                     rx.vstack(
-                        # Header with back button
+                        # Back button
                         rx.hstack(
                             rx.link(
                                 rx.button(
@@ -107,7 +108,7 @@ def manage_sync_page() -> rx.Component:
                             width="100%",
                         ),
 
-                        # Group info section
+                        # Group info
                         rx.center(
                             rx.card(
                                 rx.vstack(
@@ -115,58 +116,55 @@ def manage_sync_page() -> rx.Component:
                                         rx.heading(
                                             ManageSyncState.group_info.get("group_name", "Loading..."),
                                             size="7",
+                                            text_align="center",
                                         ),
                                         width="100%",
                                     ),
-
-                                    rx.center(
-                                        rx.grid(
-                                            rx.vstack(
-                                                rx.text("Sync Code", size="2", color_scheme="gray"),
-                                                rx.text(
-                                                    ManageSyncState.group_info.get("sync_code", ""),
-                                                    size="3",
-                                                    font_weight="bold",
-                                                ),
-                                                align="center",
-                                                spacing="1",
+                                    rx.grid(
+                                        rx.vstack(
+                                            rx.text("Sync Code", size="2", color_scheme="gray"),
+                                            rx.text(
+                                                ManageSyncState.group_info.get("sync_code", ""),
+                                                size="3",
+                                                font_weight="bold",
                                             ),
-                                            rx.vstack(
-                                                rx.text("Sync Mode", size="2", color_scheme="gray"),
-                                                rx.text(
-                                                    ManageSyncState.group_info.get("sync_mode", ""),
-                                                    size="3",
-                                                ),
-                                                align="center",
-                                                spacing="1",
-                                            ),
-                                            rx.vstack(
-                                                rx.text("Created", size="2", color_scheme="gray"),
-                                                rx.text(
-                                                    ManageSyncState.group_info.get("created_at", ""),
-                                                    size="3",
-                                                ),
-                                                align="center",
-                                                spacing="1",
-                                            ),
-                                            rx.vstack(
-                                                rx.text("Last Sync", size="2", color_scheme="gray"),
-                                                rx.text(
-                                                    ManageSyncState.group_info.get("last_sync", "Never"),
-                                                    size="3",
-                                                ),
-                                                align="center",
-                                                spacing="1",
-                                            ),
-                                            columns="2",
-                                            spacing="4",
-                                            width="100%",
+                                            align="center",
+                                            spacing="1",
                                         ),
+                                        rx.vstack(
+                                            rx.text("Sync Mode", size="2", color_scheme="gray"),
+                                            rx.text(
+                                                ManageSyncState.group_info.get("sync_mode", ""),
+                                                size="3",
+                                            ),
+                                            align="center",
+                                            spacing="1",
+                                        ),
+                                        rx.vstack(
+                                            rx.text("Created", size="2", color_scheme="gray"),
+                                            rx.text(
+                                                ManageSyncState.group_info.get("created_at", ""),
+                                                size="3",
+                                            ),
+                                            align="center",
+                                            spacing="1",
+                                        ),
+                                        rx.vstack(
+                                            rx.text("Last Sync", size="2", color_scheme="gray"),
+                                            rx.text(
+                                                ManageSyncState.group_info.get("last_sync", "Never"),
+                                                size="3",
+                                            ),
+                                            align="center",
+                                            spacing="1",
+                                        ),
+                                        columns=rx.breakpoints(initial="1", sm="2"),
+                                        spacing="4",
                                         width="100%",
                                     ),
 
-                                    # Action buttons
-                                    rx.center(
+                                    # Buttons
+                                    rx.box(
                                         rx.hstack(
                                             rx.button(
                                                 rx.cond(
@@ -182,6 +180,7 @@ def manage_sync_page() -> rx.Component:
                                                 disabled=ManageSyncState.is_loading,
                                                 color_scheme="green",
                                                 size="3",
+                                                width="100%",  # ✅ ensures button fits inside parent
                                             ),
                                             rx.button(
                                                 rx.hstack(
@@ -193,12 +192,16 @@ def manage_sync_page() -> rx.Component:
                                                 color_scheme="red",
                                                 variant="outline",
                                                 size="3",
+                                                width="100%",  # ✅ same width control
                                             ),
                                             spacing="3",
+                                            wrap="wrap",
+                                            justify="center",
+                                            width="100%",
                                         ),
                                         width="100%",
+                                        mt="1rem",
                                     ),
-
                                     spacing="4",
                                     align="center",
                                     width="100%",
@@ -209,18 +212,15 @@ def manage_sync_page() -> rx.Component:
                             width="100%",
                         ),
 
-                        # Members section
+                        # Members list
                         rx.vstack(
                             rx.heading("Group Members", size="5"),
-
                             rx.cond(
                                 ManageSyncState.group_members.length() > 0,
-                                rx.vstack(
-                                    rx.foreach(
-                                        ManageSyncState.group_members,
-                                        member_card,
-                                    ),
-                                    spacing="2",
+                                rx.grid(
+                                    rx.foreach(ManageSyncState.group_members, member_card),
+                                    columns=rx.breakpoints(initial="1", sm="2"),
+                                    gap="1rem",
                                     width="100%",
                                 ),
                                 rx.center(
@@ -232,12 +232,12 @@ def manage_sync_page() -> rx.Component:
                                     width="100%",
                                     padding="2rem",
                                 ),
-                                ),
-
+                            ),
                             spacing="3",
                             width="100%",
                         ),
 
+                        # Feedback
                         rx.cond(
                             ManageSyncState.error_message != "",
                             rx.callout(
@@ -245,8 +245,7 @@ def manage_sync_page() -> rx.Component:
                                 icon="triangle_alert",
                                 color_scheme="red",
                             ),
-                            ),
-
+                        ),
                         rx.cond(
                             ManageSyncState.success_message != "",
                             rx.callout(
@@ -254,19 +253,22 @@ def manage_sync_page() -> rx.Component:
                                 icon="check",
                                 color_scheme="green",
                             ),
-                            ),
+                        ),
 
                         spacing="5",
-                        width="100%",
                         padding_y="2rem",
+                        width="100%",
                     ),
-                    max_width="800px",
+                    # ✅ Responsive container
                     width="100%",
-                    padding_x=rx.breakpoints(initial="1rem", sm="2rem"),
+                    max_width="1400px",
+                    mx="auto",
+                    padding_x=["1rem", "2rem", "3rem"],
                 ),
                 width="100%",
             ),
         ),
+        # Fallback
         rx.center(
             rx.vstack(
                 rx.spinner(size="3"),

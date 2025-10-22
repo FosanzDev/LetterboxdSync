@@ -17,11 +17,12 @@ def lists_page() -> rx.Component:
             rx.center(
                 rx.container(
                     rx.vstack(
+                        # Header + refresh button
                         rx.hstack(
                             rx.heading("My Letterboxd Lists", size="7"),
                             rx.button(
                                 rx.cond(
-                                    ListsState.is_loading,
+                                    ListsState.lists_loading,
                                     rx.hstack(
                                         rx.spinner(size="2"),
                                         rx.text("Loading..."),
@@ -34,14 +35,17 @@ def lists_page() -> rx.Component:
                                     ),
                                 ),
                                 on_click=ListsState.fetch_user_lists,
-                                disabled=ListsState.is_loading,
+                                disabled=ListsState.lists_loading,
                                 variant="soft",
                             ),
                             justify="between",
                             align="center",
                             width="100%",
+                            wrap="wrap",  # ✅ allows wrapping on small screens
+                            row_gap="1rem",
                         ),
 
+                        # Lists grid
                         rx.cond(
                             ListsState.user_lists.length() > 0,
                             rx.grid(
@@ -69,7 +73,7 @@ def lists_page() -> rx.Component:
                                                     max_height="3em",
                                                     overflow="hidden",
                                                 ),
-                                                ),
+                                            ),
 
                                             rx.hstack(
                                                 rx.button(
@@ -87,10 +91,8 @@ def lists_page() -> rx.Component:
                                                     flex="1",
                                                 ),
 
-                                                # Conditional Share/Manage button
                                                 rx.cond(
                                                     SyncState.shared_list_status.get(list_item["url"], False),
-                                                    # Manage button (list is already shared)
                                                     rx.button(
                                                         rx.cond(
                                                             SyncState.sync_loading,
@@ -108,7 +110,6 @@ def lists_page() -> rx.Component:
                                                         color_scheme="green",
                                                         flex="1",
                                                     ),
-                                                    # Share button (list is not shared)
                                                     rx.button(
                                                         rx.cond(
                                                             SyncState.sync_loading,
@@ -131,7 +132,6 @@ def lists_page() -> rx.Component:
                                                         flex="1",
                                                     ),
                                                 ),
-
                                                 spacing="2",
                                                 width="100%",
                                             ),
@@ -140,14 +140,17 @@ def lists_page() -> rx.Component:
                                             width="100%",
                                         ),
                                         width="100%",
+                                        height="100%",
                                     ),
                                 ),
+                                # ✅ Responsive column count and spacing
                                 columns=rx.breakpoints(
                                     initial="1",
                                     sm="2",
                                     md="2",
                                     lg="2",
                                 ),
+                                gap="1.5rem",
                                 width="100%",
                             ),
                             rx.center(
@@ -161,9 +164,11 @@ def lists_page() -> rx.Component:
                                     spacing="3",
                                 ),
                                 min_height="40vh",
+                                width="100%",
                             ),
-                            ),
+                        ),
 
+                        # Messages
                         rx.cond(
                             ListsState.error_message != "",
                             rx.callout(
@@ -171,8 +176,7 @@ def lists_page() -> rx.Component:
                                 icon="triangle_alert",
                                 color_scheme="red",
                             ),
-                            ),
-
+                        ),
                         rx.cond(
                             ListsState.success_message != "",
                             rx.callout(
@@ -180,15 +184,17 @@ def lists_page() -> rx.Component:
                                 icon="check",
                                 color_scheme="green",
                             ),
-                            ),
-
+                        ),
                         spacing="5",
                         padding_y="2rem",
+                        width="100%",  # ✅ ensures inner vstack scales properly
                     ),
-                    max_width="1400px",
+                    max_width="100%",       # ✅ prevents container from exceeding screen
+                    width="100%",           # ✅ fills available width
+                    padding_x=["1rem", "2rem", "3rem"],  # ✅ responsive horizontal padding
                     on_mount=ListsState.on_load,
                 ),
-            )
+            ),
         ),
         # Fallback while checking authentication or redirecting
         rx.center(

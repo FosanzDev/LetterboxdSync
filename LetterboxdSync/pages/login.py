@@ -35,7 +35,7 @@ def login_page() -> rx.Component:
                             ),
                             rx.button(
                                 rx.cond(
-                                    AuthState.is_loading,
+                                    AuthState.auth_loading,
                                     rx.hstack(
                                         rx.spinner(size="2"),
                                         rx.text("Connecting..."),
@@ -44,7 +44,7 @@ def login_page() -> rx.Component:
                                     "Login / Register"
                                 ),
                                 on_click=AuthState.login,
-                                disabled=AuthState.is_loading,
+                                disabled=AuthState.auth_loading,
                                 width="100%",
                                 size="3",
                             ),
@@ -110,4 +110,5 @@ def login_page() -> rx.Component:
             ),
             padding="2rem",
         ),
+        on_mount=AuthState.set_loading(False)
     )

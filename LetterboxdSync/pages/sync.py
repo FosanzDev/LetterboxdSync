@@ -84,11 +84,12 @@ def sync_group_card(group) -> rx.Component:
         ),
         width="100%",
         padding="1.5rem",
+        height="100%",
     )
 
 
 def sync_page() -> rx.Component:
-    """Sync page component."""
+    """Sync page component (fully responsive)."""
     return rx.cond(
         AuthState.is_authenticated,
         rx.fragment(
@@ -99,7 +100,7 @@ def sync_page() -> rx.Component:
                         # Header
                         rx.vstack(
                             rx.center(
-                                rx.heading("Sync Groups", size="7"),
+                                rx.heading("Sync Groups", size="7", text_align="center"),
                                 width="100%",
                             ),
                             rx.center(
@@ -107,6 +108,7 @@ def sync_page() -> rx.Component:
                                     "Manage your shared Letterboxd lists",
                                     size="3",
                                     color_scheme="gray",
+                                    text_align="center",
                                 ),
                                 width="100%",
                             ),
@@ -114,14 +116,17 @@ def sync_page() -> rx.Component:
                             width="100%",
                         ),
 
+                        # Content
                         rx.cond(
                             SyncState.sync_groups.length() > 0,
-                            rx.vstack(
-                                rx.foreach(
-                                    SyncState.sync_groups,
-                                    sync_group_card,
+                            rx.grid(
+                                rx.foreach(SyncState.sync_groups, sync_group_card),
+                                columns=rx.breakpoints(
+                                    initial="1",
+                                    sm="1",
+                                    md="2",
                                 ),
-                                spacing="3",
+                                gap="1.5rem",
                                 width="100%",
                             ),
                             rx.center(
@@ -143,8 +148,9 @@ def sync_page() -> rx.Component:
                                 min_height="40vh",
                                 width="100%",
                             ),
-                            ),
+                        ),
 
+                        # Feedback
                         rx.cond(
                             SyncState.error_message != "",
                             rx.callout(
@@ -152,8 +158,7 @@ def sync_page() -> rx.Component:
                                 icon="triangle_alert",
                                 color_scheme="red",
                             ),
-                            ),
-
+                        ),
                         rx.cond(
                             SyncState.success_message != "",
                             rx.callout(
@@ -161,19 +166,22 @@ def sync_page() -> rx.Component:
                                 icon="check",
                                 color_scheme="green",
                             ),
-                            ),
+                        ),
 
                         spacing="5",
-                        width="100%",
                         padding_y="2rem",
+                        width="100%",
                     ),
-                    max_width="800px",
+                    # ✅ Responsive container
                     width="100%",
-                    padding_x=rx.breakpoints(initial="1rem", sm="2rem"),
+                    max_width="1400px",
+                    mx="auto",
+                    padding_x=["1rem", "2rem", "3rem"],
                 ),
                 width="100%",
             ),
         ),
+        # Fallback
         rx.center(
             rx.vstack(
                 rx.spinner(size="3"),

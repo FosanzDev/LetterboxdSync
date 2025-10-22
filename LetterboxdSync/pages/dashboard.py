@@ -14,11 +14,16 @@ def dashboard_page() -> rx.Component:
             rx.center(
                 rx.container(
                     rx.vstack(
+                        # Welcome header
                         rx.heading(
                             f"Welcome back, {AuthState.current_user}!",
                             size="8",
+                            text_align="center",
+                            width="100%",
                         ),
 
+                        # Dashboard grid cards
+                        # Dashboard grid cards
                         rx.grid(
                             rx.card(
                                 rx.vstack(
@@ -28,12 +33,17 @@ def dashboard_page() -> rx.Component:
                                         color_scheme="gray",
                                     ),
                                     rx.link(
-                                        rx.button("Go to Lists", size="3"),
+                                        rx.button("Go to Lists", size="3", width="100%"),  # ✅ full width
                                         href="/lists",
+                                        width="100%",  # ensures link container stretches too
                                     ),
                                     spacing="3",
                                     align="start",
+                                    height="100%",
+                                    justify="between",
                                 ),
+                                width="100%",
+                                height="100%",
                             ),
                             rx.card(
                                 rx.vstack(
@@ -43,29 +53,42 @@ def dashboard_page() -> rx.Component:
                                         color_scheme="gray",
                                     ),
                                     rx.link(
-                                        rx.button("Manage Syncs", size="3"),
+                                        rx.button("Manage Syncs", size="3", width="100%"),  # ✅ full width
                                         href="/sync",
+                                        width="100%",
                                     ),
                                     spacing="3",
                                     align="start",
+                                    height="100%",
+                                    justify="between",
                                 ),
+                                width="100%",
+                                height="100%",
                             ),
+                            # ✅ Responsive grid layout
                             columns=rx.breakpoints(
                                 initial="1",
                                 sm="1",
                                 md="2",
                                 lg="2",
                             ),
-                            spacing="4",
+                            gap="1.5rem",  # consistent spacing between cards
                             width="100%",
+                            justify_items="center",
+                            align_items="stretch",  # cards same height
                         ),
-
-                        spacing="5",
+                        spacing="6",
                         padding_y="2rem",
+                        width="100%",  # ensures vstack fills horizontally
+                        align="center",
                     ),
-                    max_width="1200px",
+                    # ✅ Responsive container
+                    width="100%",
+                    max_width="1400px",
+                    mx="auto",  # center container horizontally
+                    padding_x=["1rem", "2rem", "3rem"],  # responsive side padding
                 ),
-            )
+            ),
         ),
         # Fallback while checking authentication or redirecting
         rx.center(
