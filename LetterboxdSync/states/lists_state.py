@@ -104,11 +104,6 @@ class ListsState(AuthState):
         from ..states.sync_state import SyncState
         yield from SyncState.refresh_shared_status_for_lists(self.user_lists)
 
-    def update_shared_status(self, status_dict: dict):
-        """Update shared status - this will trigger SyncState update via event"""
-        # We'll handle this through an event or direct state update
-        pass  # For now, we'll handle this differently
-
     def select_list(self, list_id: str, list_name: str, list_url: str, film_count: str = "0"):
         """Select a list."""
         self.selected_list = {

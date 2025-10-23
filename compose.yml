@@ -2,14 +2,24 @@ services:
   backend:
     build:
       dockerfile: Dockerfile
-    ports:
-      - 9300:3000  # Frontend port
     depends_on:
       - redis
     volumes:
       - ./data:/app/data
     environment:
       - DATABASE_PATH=/app/data
+    # No ports exposed! It's only on the docker network.
+
+  frontend:
+    build:
+      dockerfile: web.Dockerfile
+    ports:
+      # Map container port 80 (Nginx) to host 9300
+      # Use 127.0.0.1 to make it only accessible from your host Nginx
+      - "127.0.0.1:9300:80"
+    depends_on:
+      - backend
+
   redis:
     image: redis
     volumes:

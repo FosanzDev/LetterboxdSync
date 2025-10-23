@@ -1,16 +1,16 @@
 """Main application file."""
 import reflex as rx
-from LetterboxdSync.pages.login import login_page
-from LetterboxdSync.pages.dashboard import dashboard_page
-from LetterboxdSync.pages.lists import lists_page
-from LetterboxdSync.pages.list_detail import list_detail_page
-from LetterboxdSync.pages.sync import sync_page
-from LetterboxdSync.pages.manage import manage_sync_page
-from LetterboxdSync.states.manage_sync_state import ManageSyncState
-from LetterboxdSync.states.sync_state import SyncState
-from LetterboxdSync.states import ListsState
-from LetterboxdSync.states.auth_state import AuthState
-from LetterboxdSync.states.list_detail_state import ListDetailState
+from .pages.login import login_page
+from .pages.dashboard import dashboard_page
+from .pages.lists import lists_page
+from .pages.list_detail import list_detail_page
+from .pages.sync import sync_page
+from .pages.manage import manage_sync_page
+from .states.manage_sync_state import ManageSyncState
+from .states.sync_state import SyncState
+from .states import ListsState
+from .states.auth_state import AuthState
+from .states.list_detail_state import ListDetailState
 
 
 def index() -> rx.Component:
