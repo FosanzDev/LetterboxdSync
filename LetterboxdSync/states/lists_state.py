@@ -84,15 +84,12 @@ class ListsState(AuthState):
                 self.user_lists = converted_lists
                 yield
 
-                # Trigger shared status check
-                self.check_shared_status_for_lists()
-
                 self.set_success(f"Found {len(lists)} lists!")
             else:
                 self.set_error("No lists found")
 
             self.set_loading(False)
-            yield
+            return SyncState.refresh_shared_status_for_lists(self.user_lists)
 
         except Exception as e:
             self.set_error(f"Error: {str(e)}")
