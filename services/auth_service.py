@@ -46,7 +46,6 @@ class AuthService:
                 f.write(key)
             return key
 
-    # ... rest of the methods remain exactly the same ...
     def _encrypt_credential(self, credential: str) -> str:
         """Encrypt a credential string."""
         return self.cipher.encrypt(credential.encode()).decode()
