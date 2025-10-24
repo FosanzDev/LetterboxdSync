@@ -192,7 +192,6 @@ def lists_page() -> rx.Component:
                     max_width="100%",       # ✅ prevents container from exceeding screen
                     width="100%",           # ✅ fills available width
                     padding_x=["1rem", "2rem", "3rem"],  # ✅ responsive horizontal padding
-                    on_mount=ListsState.on_load,
                 ),
             ),
         ),

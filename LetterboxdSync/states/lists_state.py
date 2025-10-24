@@ -23,9 +23,9 @@ class ListsState(AuthState):
         if len(self.user_lists) == 0:
             # Return the event instead of calling it directly
             return ListsState.fetch_user_lists
-        else:
-            # Return an event to trigger a reactive SyncState call
-            return SyncState.refresh_shared_status_for_lists(self.user_lists)
+
+        # Return an event to trigger a reactive SyncState call
+        return SyncState.refresh_shared_status_for_lists(self.user_lists)
 
     def fetch_user_lists(self):
         """Fetch all lists for the current user."""
