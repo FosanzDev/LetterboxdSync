@@ -25,6 +25,7 @@ def login_page() -> rx.Component:
                                 value=AuthState.username,
                                 on_change=AuthState.set_username,
                                 size="3",
+                                width="100%"
                             ),
                             rx.input(
                                 placeholder="Password",
@@ -32,6 +33,7 @@ def login_page() -> rx.Component:
                                 value=AuthState.password,
                                 on_change=AuthState.set_password,
                                 size="3",
+                                width="100%"
                             ),
                             rx.button(
                                 rx.cond(
@@ -41,7 +43,7 @@ def login_page() -> rx.Component:
                                         rx.text("Connecting..."),
                                         spacing="2",
                                     ),
-                                    "Login / Register"
+                                    "Login with Letterboxd"
                                 ),
                                 on_click=AuthState.login,
                                 disabled=AuthState.auth_loading,
