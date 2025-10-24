@@ -112,5 +112,9 @@ def login_page() -> rx.Component:
             ),
             padding="2rem",
         ),
-        on_mount=AuthState.set_loading(False)
+        on_mount=[
+            AuthState.on_load,
+            AuthState.check_login_redirect,
+            AuthState.set_loading(False)
+        ]
     )

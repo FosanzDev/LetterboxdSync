@@ -1,9 +1,13 @@
 """Authentication state management."""
 import reflex as rx
 from .base_state import BaseState
-from ..services.auth_service import AuthService
+from services.auth_service import AuthService
 
 _auth_service = AuthService()
+
+# Define the cookie name and persistence settings
+COOKIE_NAME = "session_token"
+COOKIE_MAX_AGE = 3600 * 24 * 7  # 7 days persistence
 
 class AuthState(BaseState):
     """State for authentication."""
@@ -12,7 +16,16 @@ class AuthState(BaseState):
     password: str = ""
     is_authenticated: bool = False
     current_user: str = ""
-    session_token: str = ""
+
+    # 💡 FIX: Use rx.Cookie(...) as the default value to persist the token.
+    # This automatically loads/saves the cookie data.
+    session_token: str = rx.Cookie(
+        name=COOKIE_NAME,
+        max_age=COOKIE_MAX_AGE,
+        path="/",
+        same_site="lax"
+    )
+
     is_hydrated: bool = False
     redirect_to: str = ""
     auth_loading: bool = False
@@ -28,22 +41,20 @@ class AuthState(BaseState):
     def set_password(self, value: str):
         self.password = value
 
+    @rx.event
     def on_load(self):
         """Check authentication on page load."""
-        # Clear any lingering messages when navigating to protected pages
         self.clear_messages()
-
         self.is_hydrated = True
+
+        # The token is AUTOMATICALLY loaded into self.session_token by rx.Cookie.
         if not self.check_auth():
-            # Clear any cached user data
             self._clear_user_data()
-            # Redirect to login if not authenticated
             return rx.redirect("/login")
 
     def check_auth(self) -> bool:
         """Check if user is authenticated."""
         if self.session_token:
-            # Use _auth_service
             valid, user_data = _auth_service.verify_session(self.session_token)
 
             if valid:
@@ -58,26 +69,22 @@ class AuthState(BaseState):
         """Clear all user-related data from state."""
         self.is_authenticated = False
         self.current_user = ""
+        # Setting this to "" automatically clears the cookie on the client.
         self.session_token = ""
         self.username = ""
         self.password = ""
 
     def login(self):
         """Login or register user."""
-        # Validate inputs first
         if not self.username or not self.password:
             self.set_error("Please fill in all fields")
             return
 
-        # Clear messages and set loading state
         self.clear_messages()
         self.auth_loading = True
-
-        # Force a yield to update UI with loading state
         yield
 
         try:
-            # Perform the authentication (this is blocking and may take time)
             success, session_token, message = _auth_service.register_or_login(
                 self.username,
                 self.password
@@ -86,12 +93,12 @@ class AuthState(BaseState):
             if success:
                 self.is_authenticated = True
                 self.current_user = self.username
+                # Setting the rx.Cookie var automatically saves it on the client
                 self.session_token = session_token
-                self.password = ""  # Clear password from memory
+
+                self.password = ""
                 self.set_success(message)
                 self.auth_loading = False
-
-                # Redirect to dashboard
                 yield rx.redirect("/dashboard")
             else:
                 self.set_error(message)
@@ -99,7 +106,6 @@ class AuthState(BaseState):
                 yield
 
         except Exception as e:
-            # Handle any unexpected errors
             self.set_error(f"An error occurred: {str(e)}")
             self.auth_loading = False
             yield
@@ -107,19 +113,16 @@ class AuthState(BaseState):
     def logout(self):
         """Logout user."""
         if self.session_token:
-            # Use _auth_service
             _auth_service.logout(self.session_token)
 
-        # Clear all user data and messages
+        # Clears user data and sets self.session_token = "" to clear the cookie.
         self._clear_user_data()
         self.clear_messages()
 
-        # Redirect to login
         return rx.redirect("/login")
 
     def check_login_redirect(self):
         """Check if already logged in and redirect from login page."""
-        # Clear messages when loading login page
         self.clear_messages()
 
         if self.is_authenticated:
