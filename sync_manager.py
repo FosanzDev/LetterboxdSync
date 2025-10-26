@@ -221,6 +221,25 @@ class SyncManager:
 
         return result
 
+    def get_sync_groups_for_user(self, username: str) -> List[Dict]:
+        """Get all active sync groups for a specific user."""
+        groups = self.db.get_sync_groups_for_user(username)
+
+        result = []
+        for group in groups:
+            members = self.db.get_group_members(group.id)
+            result.append({
+                'id': group.id,
+                'sync_code': group.sync_code,
+                'group_name': group.group_name,
+                'sync_mode': group.sync_mode.value,
+                'member_count': len(members),
+                'created_at': group.created_at,
+                'last_sync': group.last_sync
+            })
+
+        return result
+
     # Automatic Polling
     async def start_auto_sync(self, interval_seconds: int = 300):
         """

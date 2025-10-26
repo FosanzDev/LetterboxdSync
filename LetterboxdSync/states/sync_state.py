@@ -186,9 +186,13 @@ class SyncState(AuthState):
 
     def load_sync_groups(self):
         """Load all sync groups for the current user."""
+        if not self.is_authenticated:
+            self.sync_groups = []
+            return
+
         try:
             sync_manager = self._get_sync_manager()
-            sync_groups = sync_manager.get_all_sync_groups()
+            sync_groups = sync_manager.get_sync_groups_for_user(self.current_user)
 
             converted_groups = []
             for group in sync_groups:

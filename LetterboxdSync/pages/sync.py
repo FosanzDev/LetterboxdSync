@@ -180,6 +180,7 @@ def sync_page() -> rx.Component:
                 ),
                 width="100%",
             ),
+            on_mount=[SyncState.load_sync_groups]
         ),
         # Fallback
         rx.center(

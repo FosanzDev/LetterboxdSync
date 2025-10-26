@@ -426,3 +426,57 @@ class DatabaseManager:
                 ))
 
             return groups
+
+    def get_sync_groups_for_user(self, username: str) -> List[SyncGroup]:
+        """Get all active sync groups for a specific user."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Get all active group members
+            cursor.execute('''
+                           SELECT DISTINCT sgm.sync_group_id, sgm.username_encrypted
+                           FROM sync_group_members sgm
+                                    JOIN sync_groups sg ON sgm.sync_group_id = sg.id
+                           WHERE sgm.is_active = 1
+                             AND sg.is_active = 1
+                           ''')
+
+            # Filter by decrypting and matching username
+            matching_group_ids = []
+            for row in cursor.fetchall():
+                group_id, encrypted_username = row
+                try:
+                    decrypted_username = self._decrypt_credential(encrypted_username)
+                    if decrypted_username == username:
+                        matching_group_ids.append(group_id)
+                except Exception:
+                    continue
+
+            if not matching_group_ids:
+                return []
+
+            # Get sync group details for matching group IDs
+            placeholders = ','.join('?' * len(matching_group_ids))
+            cursor.execute(f'''
+                           SELECT id, sync_code, group_name, sync_mode, master_user_id,
+                                  created_at, last_sync, is_active
+                           FROM sync_groups
+                           WHERE id IN ({placeholders})
+                             AND is_active = 1
+                           ORDER BY created_at DESC
+                           ''', matching_group_ids)
+
+            groups = []
+            for row in cursor.fetchall():
+                groups.append(SyncGroup(
+                    id=row[0],
+                    sync_code=row[1],
+                    group_name=row[2],
+                    sync_mode=SyncMode(row[3]),
+                    master_user_id=row[4],
+                    created_at=row[5],
+                    last_sync=row[6],
+                    is_active=bool(row[7])
+                ))
+
+            return groups
